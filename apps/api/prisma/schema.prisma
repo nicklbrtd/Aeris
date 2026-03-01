@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum ChatType {
+  dm
+  community
+}
+
+enum MessageType {
+  text
+  image
+}
+
+model User {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  nickname      String
+  avatarUrl     String?
+  deviceKeyHash String?
+  role          UserRole    @default(user)
+  sessions      Session[]
+  chatMembers   ChatMember[]
+  messages      Message[]
+  images        Image[]
+  invitesMade   Invite[]    @relation("InviteCreator")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Invite {
+  code               String    @id
+  createdAt          DateTime  @default(now())
+  createdByUserId    String?
+  usedAt             DateTime?
+  usedByUserId       String?
+  maxUses            Int       @default(1)
+  uses               Int       @default(0)
+  defaultCommunityId String?
+  createdBy          User?     @relation("InviteCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model Chat {
+  id         String       @id @default(cuid())
+  type       ChatType
+  title      String?
+  createdAt  DateTime     @default(now())
+  members    ChatMember[]
+  messages   Message[]
+
+  @@index([type])
+}
+
+model ChatMember {
+  chatId    String
+  userId    String
+  joinedAt  DateTime @default(now())
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([chatId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  chatId    String
+  senderId  String
+  createdAt DateTime    @default(now())
+  type      MessageType @default(text)
+  text      String?
+  imageId   String?
+  chat      Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  image     Image?      @relation(fields: [imageId], references: [id], onDelete: SetNull)
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+}
+
+model Image {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  uploaderId   String
+  mimeType     String
+  width        Int
+  height       Int
+  originalPath String
+  thumbPath    String
+  uploader     User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@index([uploaderId])
+  @@index([createdAt])
+}
