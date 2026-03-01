@@ -48,7 +48,7 @@ export const inviteRoutes: FastifyPluginAsync = async (fastify) => {
 
     return reply.send({
       invite,
-      inviteLink: `${fastify.config.WEB_ORIGIN}/join?code=${invite.code}`,
+      inviteLink: `${fastify.appConfig.WEB_ORIGIN}/join?code=${invite.code}`,
     });
   });
 };

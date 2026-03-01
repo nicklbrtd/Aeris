@@ -139,10 +139,7 @@ export const chatRoutes: FastifyPluginAsync = async (fastify) => {
       data: {
         type: 'dm',
         members: {
-          createMany: {
-            data: [{ userId: authUser.id }, { userId: body.data.memberUserId }],
-            skipDuplicates: true,
-          },
+          create: [{ userId: authUser.id }, { userId: body.data.memberUserId }],
         },
       },
     });

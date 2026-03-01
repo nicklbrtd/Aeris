@@ -1,16 +1,17 @@
 {
-  "name": "myfirstsocial",
+  "name": "aeris",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "concurrently -n api,web -c cyan,magenta \"pnpm --filter @mfs/api dev\" \"pnpm --filter @mfs/web dev\"",
-    "build": "pnpm -r build",
+    "dev": "dotenv -e .env -- concurrently -n api,web -c cyan,magenta \"pnpm --filter @mfs/api dev\" \"pnpm --filter @mfs/web dev\"",
+    "build": "dotenv -e .env -- pnpm -r build",
     "lint": "pnpm -r lint",
     "format": "prettier --write ."
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "dotenv-cli": "^8.0.0",
     "prettier": "^3.4.2"
   }
 }

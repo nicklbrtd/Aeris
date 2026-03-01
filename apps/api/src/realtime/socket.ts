@@ -5,19 +5,37 @@ import { createMessage, ensureChatMembership } from '../lib/chatService.js';
 import { messageLimiter } from '../lib/rateLimiter.js';
 import { sanitizeMessageText } from '../lib/sanitize.js';
 
+function readCookieValue(cookieHeader: string | undefined, key: string): string | null {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const pairs = cookieHeader.split(';');
+  for (const pair of pairs) {
+    const [name, ...rest] = pair.trim().split('=');
+    if (name === key) {
+      return decodeURIComponent(rest.join('='));
+    }
+  }
+
+  return null;
+}
+
 export function setupSocket(fastify: FastifyInstance): Server {
   const io = new Server(fastify.server, {
     path: '/socket.io',
     cors: {
-      origin: fastify.config.WEB_ORIGIN,
+      origin: fastify.appConfig.WEB_ORIGIN,
       credentials: true,
     },
   });
 
   io.use(async (socket, next) => {
-    const sessionId = socket.request.cookies?.[fastify.config.SESSION_COOKIE_NAME];
-    const guestToken = socket.handshake.auth?.guestToken;
-    const candidate = sessionId || guestToken;
+    const cookieHeader = socket.handshake.headers.cookie;
+    const sessionId = readCookieValue(cookieHeader, fastify.appConfig.SESSION_COOKIE_NAME);
+    const guestToken =
+      fastify.appConfig.NODE_ENV !== 'production' ? socket.handshake.auth?.guestToken : undefined;
+    const candidate = sessionId || (typeof guestToken === 'string' && guestToken ? guestToken : null);
 
     if (!candidate) {
       next(new Error('UNAUTHORIZED'));

@@ -29,17 +29,19 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.code(400).send({ error: 'Слишком короткий ник' });
     }
 
+    const usersCount = await fastify.prisma.user.count();
     const user = await fastify.prisma.user.create({
       data: {
         nickname,
         avatarUrl: body.data.avatarUrl || null,
+        role: usersCount === 0 ? 'admin' : 'user',
       },
     });
 
     const sessionId = await createSession(user.id);
     setSessionCookie(reply, sessionId);
 
-    const fallbackGuestTokenEnabled = fastify.config.NODE_ENV !== 'production';
+    const fallbackGuestTokenEnabled = fastify.appConfig.NODE_ENV !== 'production';
 
     await fastify.prisma.invite.update({
       where: { code: invite.code },
@@ -52,7 +54,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       },
     });
 
-    const defaultCommunityId = invite.defaultCommunityId || fastify.config.INVITE_DEFAULT_COMMUNITY_ID;
+    const defaultCommunityId = invite.defaultCommunityId || fastify.appConfig.INVITE_DEFAULT_COMMUNITY_ID;
     if (defaultCommunityId) {
       await addUserToChat(defaultCommunityId, user.id).catch(() => undefined);
     } else {

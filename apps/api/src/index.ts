@@ -42,13 +42,13 @@ const fastify = Fastify({
 
 fastify.decorate('prisma', prisma);
 fastify.decorate('resolveAuthUser', resolveAuthUser);
-fastify.decorate('config', env);
+fastify.decorate('appConfig', env);
 
 declare module 'fastify' {
   interface FastifyInstance {
     prisma: typeof prisma;
     resolveAuthUser: typeof resolveAuthUser;
-    config: typeof env;
+    appConfig: typeof env;
     io: ReturnType<typeof setupSocket>;
   }
 }
@@ -63,6 +63,8 @@ async function main(): Promise<void> {
   await fastify.register(cors, {
     origin: env.WEB_ORIGIN,
     credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-csrf-token', 'x-guest-token'],
   });
 
   await fastify.register(helmet, {

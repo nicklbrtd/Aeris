@@ -1,4 +1,4 @@
-# MyFirstSocial MVP
+# Aeris (Аэрис) MVP
 
 Премиальный приватный мессенджер + небольшие комьюнити в стиле iMessage (PWA, realtime, инвайты, анонимные профили).
 
@@ -8,6 +8,10 @@
 - `apps/api`: Fastify + TypeScript + Socket.IO + Prisma + SQLite
 
 ## Быстрый старт
+Требования:
+- Node.js 20+
+- pnpm 9+
+
 1. Установить зависимости:
    ```bash
    pnpm install

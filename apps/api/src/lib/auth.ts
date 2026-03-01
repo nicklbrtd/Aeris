@@ -54,7 +54,8 @@ export function clearSessionCookie(reply: FastifyReply): void {
 
 export async function resolveAuthUser(request: FastifyRequest): Promise<AuthUser | null> {
   const cookieSession = request.cookies[env.SESSION_COOKIE_NAME];
-  const headerSession = request.headers['x-guest-token'];
+  const headerSession =
+    env.NODE_ENV !== 'production' ? request.headers['x-guest-token'] : undefined;
   const candidateSessionId = cookieSession ?? (typeof headerSession === 'string' ? headerSession : undefined);
 
   if (!candidateSessionId) {

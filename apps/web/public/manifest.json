@@ -1,0 +1,17 @@
+{
+  "name": "Аэрис",
+  "short_name": "Aeris",
+  "description": "Приватный мессенджер и мини-сообщества",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#0f1218",
+  "theme_color": "#0f1218",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

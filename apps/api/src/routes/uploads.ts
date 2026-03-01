@@ -15,7 +15,7 @@ export const uploadRoutes: FastifyPluginAsync = async (fastify) => {
 
     const file = await request.file({
       limits: {
-        fileSize: fastify.config.MAX_IMAGE_SIZE_MB * 1024 * 1024,
+        fileSize: fastify.appConfig.MAX_IMAGE_SIZE_MB * 1024 * 1024,
       },
     });
 

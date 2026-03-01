@@ -65,6 +65,9 @@ export async function createMessage(params: {
   if (params.type === 'text' && !safeText) {
     throw new Error('EMPTY_MESSAGE');
   }
+  if (params.type === 'image' && !params.imageId) {
+    throw new Error('IMAGE_REQUIRED');
+  }
 
   const message = await prisma.message.create({
     data: {

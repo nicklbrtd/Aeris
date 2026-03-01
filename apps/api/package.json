@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "dotenv -e ../../.env -- tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name init",
-    "prisma:push": "prisma db push",
-    "invite:create": "tsx src/scripts/createInvite.ts"
+    "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev --name init",
+    "prisma:push": "dotenv -e ../../.env -- prisma db push",
+    "invite:create": "dotenv -e ../../.env -- tsx src/scripts/createInvite.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^10.0.1",
@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
+    "dotenv-cli": "^8.0.0",
     "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
