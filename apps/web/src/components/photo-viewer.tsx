@@ -79,7 +79,7 @@ export function PhotoViewer({ src, alt, open, onClose }: Props): JSX.Element {
           onClick={onClose}
         >
           <motion.img
-            {...bind()}
+            {...(bind() as any)}
             src={src}
             alt={alt}
             className="max-h-full max-w-full rounded-2xl object-contain will-change-transform"

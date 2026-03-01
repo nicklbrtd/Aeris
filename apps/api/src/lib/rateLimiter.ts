@@ -25,3 +25,6 @@ export class TokenBucket {
 }
 
 export const messageLimiter = new TokenBucket(8, 1.2);
+export const authLimiter = new TokenBucket(5, 0.2);
+export const otpSendLimiter = new TokenBucket(3, 0.05);
+export const otpVerifyLimiter = new TokenBucket(8, 0.4);

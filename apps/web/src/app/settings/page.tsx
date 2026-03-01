@@ -14,6 +14,7 @@ export default function SettingsPage(): JSX.Element {
   const router = useRouter();
   const [me, setMe] = useState<User | null>(null);
   const [pushStatus, setPushStatus] = useState('Push не настроен (TODO)');
+  const [logoutError, setLogoutError] = useState('');
 
   useEffect(() => {
     getMe()
@@ -22,11 +23,16 @@ export default function SettingsPage(): JSX.Element {
   }, [router]);
 
   const handleLogout = async (): Promise<void> => {
-    await logout().catch(() => undefined);
-    resetSocket();
-    setGuestToken(null);
-    setCsrfToken(null);
-    router.replace('/join');
+    setLogoutError('');
+    try {
+      await logout();
+      resetSocket();
+      setGuestToken(null);
+      setCsrfToken(null);
+      router.replace('/join');
+    } catch {
+      setLogoutError('Не удалось выйти из аккаунта. Проверьте соединение и повторите.');
+    }
   };
 
   const handleEnablePush = async (): Promise<void> => {
@@ -81,6 +87,7 @@ export default function SettingsPage(): JSX.Element {
         >
           Выйти
         </button>
+        {logoutError ? <p className="text-sm text-red-300">{logoutError}</p> : null}
       </div>
     </main>
   );

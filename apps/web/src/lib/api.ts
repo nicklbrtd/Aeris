@@ -65,6 +65,48 @@ export async function joinByInvite(payload: {
   return request('/auth/join', { method: 'POST', body: payload });
 }
 
+export async function registerWithPassword(payload: {
+  nickname: string;
+  password: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+}): Promise<
+  | { requiresOtp: false; user: User; csrfToken: string; guestToken: string | null }
+  | { requiresOtp: true; phoneMasked: string; expiresInSec: number; debugOtpCode?: string }
+> {
+  const data = await request<
+    | { user: User; csrfToken: string; guestToken: string | null }
+    | { requiresOtp: true; phoneMasked: string; expiresInSec: number; debugOtpCode?: string }
+  >('/auth/register', { method: 'POST', body: payload });
+
+  if ('user' in data) {
+    return { ...data, requiresOtp: false };
+  }
+
+  return data;
+}
+
+export async function verifyRegisterPhoneOtp(payload: {
+  phone: string;
+  code: string;
+}): Promise<{ user: User; csrfToken: string; guestToken: string | null }> {
+  return request('/auth/register/verify-phone', { method: 'POST', body: payload });
+}
+
+export async function resendRegisterPhoneOtp(payload: {
+  phone: string;
+}): Promise<{ ok: true; expiresInSec: number; debugOtpCode?: string }> {
+  return request('/auth/register/resend-otp', { method: 'POST', body: payload });
+}
+
+export async function loginWithPassword(payload: {
+  identifier: string;
+  password: string;
+}): Promise<{ user: User; csrfToken: string; guestToken: string | null }> {
+  return request('/auth/login', { method: 'POST', body: payload });
+}
+
 export async function logout(): Promise<void> {
   await request('/auth/logout', { method: 'POST' });
 }

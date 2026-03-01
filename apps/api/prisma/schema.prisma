@@ -25,7 +25,11 @@ enum MessageType {
 model User {
   id            String      @id @default(cuid())
   createdAt     DateTime    @default(now())
-  nickname      String
+  nickname      String      @unique
+  email         String?     @unique
+  phone         String?     @unique
+  phoneVerifiedAt DateTime?
+  passwordHash  String?
   avatarUrl     String?
   deviceKeyHash String?
   role          UserRole    @default(user)
@@ -33,6 +37,7 @@ model User {
   chatMembers   ChatMember[]
   messages      Message[]
   images        Image[]
+  otpCodes      OtpCode[]
   invitesMade   Invite[]    @relation("InviteCreator")
 }
 
@@ -113,4 +118,20 @@ model Image {
 
   @@index([uploaderId])
   @@index([createdAt])
+}
+
+model OtpCode {
+  id         String   @id @default(cuid())
+  phone      String
+  purpose    String
+  codeHash   String
+  userId     String?
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone, purpose, createdAt])
+  @@index([userId])
 }

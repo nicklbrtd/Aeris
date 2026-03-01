@@ -8,8 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "tsc -p tsconfig.json --noEmit",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev --name init",
+    "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:push": "dotenv -e ../../.env -- prisma db push",
     "invite:create": "dotenv -e ../../.env -- tsx src/scripts/createInvite.ts"
   },

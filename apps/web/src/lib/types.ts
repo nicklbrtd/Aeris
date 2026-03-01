@@ -3,6 +3,9 @@ export type User = {
   nickname: string;
   avatarUrl: string | null;
   role?: 'admin' | 'user';
+  email?: string | null;
+  phone?: string | null;
+  phoneVerified?: boolean;
 };
 
 export type ImageAsset = {
