@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.next
+dist
+build
+coverage
+.env
+.env.local
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+apps/api/uploads/originals/*
+apps/api/uploads/thumbs/*
+!apps/api/uploads/originals/.gitkeep
+!apps/api/uploads/thumbs/.gitkeep
