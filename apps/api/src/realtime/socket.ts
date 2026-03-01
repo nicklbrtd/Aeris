@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import type { FastifyInstance } from 'fastify';
 
 import { createMessage, ensureChatMembership } from '../lib/chatService.js';
+import { getAllowedWebOrigins } from '../lib/origins.js';
 import { messageLimiter } from '../lib/rateLimiter.js';
 import { sanitizeMessageText } from '../lib/sanitize.js';
 
@@ -22,10 +23,12 @@ function readCookieValue(cookieHeader: string | undefined, key: string): string 
 }
 
 export function setupSocket(fastify: FastifyInstance): Server {
+  const allowedWebOrigins = getAllowedWebOrigins(fastify.appConfig);
+
   const io = new Server(fastify.server, {
     path: '/socket.io',
     cors: {
-      origin: fastify.appConfig.WEB_ORIGIN,
+      origin: allowedWebOrigins,
       credentials: true,
     },
   });
@@ -35,7 +38,9 @@ export function setupSocket(fastify: FastifyInstance): Server {
     const sessionId = readCookieValue(cookieHeader, fastify.appConfig.SESSION_COOKIE_NAME);
     const guestToken =
       fastify.appConfig.NODE_ENV !== 'production' ? socket.handshake.auth?.guestToken : undefined;
-    const candidate = sessionId || (typeof guestToken === 'string' && guestToken ? guestToken : null);
+    const guestSessionId = typeof guestToken === 'string' && guestToken ? guestToken : null;
+    const candidate =
+      fastify.appConfig.NODE_ENV !== 'production' ? guestSessionId || sessionId : sessionId;
 
     if (!candidate) {
       next(new Error('UNAUTHORIZED'));

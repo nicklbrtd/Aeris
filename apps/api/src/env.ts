@@ -6,6 +6,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().default(4000),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
+  WEB_ORIGINS: z.string().optional(),
   DATABASE_URL: z.string().default('file:./dev.db'),
   SESSION_COOKIE_NAME: z.string().default('mfs_session'),
   SESSION_TTL_DAYS: z.coerce.number().default(30),

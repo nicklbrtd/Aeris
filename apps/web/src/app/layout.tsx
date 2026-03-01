@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import { NotificationBridge } from '@/components/notification-bridge';
 import { ServiceWorkerRegister } from '@/components/sw-register';
 import '@/styles/globals.css';
 
@@ -8,9 +9,10 @@ export const metadata: Metadata = {
   title: 'Аэрис',
   description: 'Приватный мессенджер и комьюнити',
   manifest: '/manifest.json',
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
   appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
     title: 'Aeris',
   },
 };
@@ -35,10 +37,11 @@ function ThemeBootScript(): JSX.Element {
 
 export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <body>
         <ThemeBootScript />
         <ServiceWorkerRegister />
+        <NotificationBridge />
         {children}
       </body>
     </html>

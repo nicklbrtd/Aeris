@@ -53,7 +53,7 @@ export const chatRoutes: FastifyPluginAsync = async (fastify) => {
       },
     });
 
-    const chats = members.map((member) => {
+    const chats = members.map((member: (typeof members)[number]) => {
       const chat = member.chat;
       const lastMessage = chat.messages[0] ?? null;
 
@@ -61,7 +61,7 @@ export const chatRoutes: FastifyPluginAsync = async (fastify) => {
       let avatarUrl: string | null = null;
 
       if (chat.type === 'dm') {
-        const target = chat.members.find((m) => m.userId !== userId)?.user;
+        const target = chat.members.find((m: (typeof chat.members)[number]) => m.userId !== userId)?.user;
         if (target) {
           title = target.nickname;
           avatarUrl = target.avatarUrl;
@@ -117,6 +117,38 @@ export const chatRoutes: FastifyPluginAsync = async (fastify) => {
     if (!body.data.memberUserId) {
       return reply.code(400).send({ error: 'Нужен userId для DM' });
     }
+    if (body.data.memberUserId === authUser.id) {
+      return reply.code(400).send({ error: 'Нельзя создать чат с самим собой' });
+    }
+
+    const targetUser = await fastify.prisma.user.findUnique({
+      where: { id: body.data.memberUserId },
+      select: { id: true, allowDmFrom: true },
+    });
+    if (!targetUser) {
+      return reply.code(404).send({ error: 'Пользователь не найден' });
+    }
+
+    if (targetUser.allowDmFrom === 'nobody') {
+      return reply.code(403).send({ error: 'Этот пользователь запретил личные сообщения' });
+    }
+    if (targetUser.allowDmFrom === 'members') {
+      const hasSharedChat = await fastify.prisma.chatMember.count({
+        where: {
+          userId: authUser.id,
+          chat: {
+            members: {
+              some: {
+                userId: targetUser.id,
+              },
+            },
+          },
+        },
+      });
+      if (!hasSharedChat) {
+        return reply.code(403).send({ error: 'Личные сообщения доступны только участникам общих чатов' });
+      }
+    }
 
     const [a, b] = [authUser.id, body.data.memberUserId].sort();
     const existing = await fastify.prisma.chat.findFirst({
@@ -145,6 +177,79 @@ export const chatRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     return reply.send({ chat });
+  });
+
+  fastify.get('/communities', { preHandler: requireAuth }, async (request, reply) => {
+    const userId = request.authUser!.id;
+
+    const communities = await fastify.prisma.chat.findMany({
+      where: { type: 'community' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+        members: {
+          where: { userId },
+          select: { userId: true },
+        },
+      },
+    });
+
+    return reply.send({
+      communities: communities.map((community) => ({
+        id: community.id,
+        title: community.title ?? 'Сообщество',
+        membersCount: community._count.members,
+        joined: community.members.length > 0,
+      })),
+      csrfToken: createCsrfToken(request.authUser!.sessionId),
+    });
+  });
+
+  fastify.post('/communities/:id/join', { preHandler: requireAuth }, async (request, reply) => {
+    const authUser = request.authUser!;
+    const csrf = request.headers['x-csrf-token'];
+    if (!verifyCsrfToken(authUser.sessionId, typeof csrf === 'string' ? csrf : undefined)) {
+      return reply.code(403).send({ error: 'CSRF токен невалиден' });
+    }
+
+    const params = z.object({ id: z.string() }).safeParse(request.params);
+    if (!params.success) {
+      return reply.code(400).send({ error: 'Некорректный id сообщества' });
+    }
+
+    const community = await fastify.prisma.chat.findFirst({
+      where: {
+        id: params.data.id,
+        type: 'community',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!community) {
+      return reply.code(404).send({ error: 'Сообщество не найдено' });
+    }
+
+    await fastify.prisma.chatMember.upsert({
+      where: {
+        chatId_userId: {
+          chatId: params.data.id,
+          userId: authUser.id,
+        },
+      },
+      update: {},
+      create: {
+        chatId: params.data.id,
+        userId: authUser.id,
+      },
+    });
+
+    return reply.send({ ok: true, chatId: params.data.id });
   });
 
   fastify.get('/chats/:id/messages', { preHandler: requireAuth }, async (request, reply) => {

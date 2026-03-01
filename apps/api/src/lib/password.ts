@@ -1,9 +1,10 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from 'node:crypto';
 
 const KEY_LEN = 64;
-const N = 1 << 15;
+const N = 1 << 14;
 const R = 8;
 const P = 1;
+const MAXMEM = 64 * 1024 * 1024;
 
 async function scryptDerive(
   password: string,
@@ -24,7 +25,7 @@ async function scryptDerive(
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
-  const derived = await scryptDerive(password, salt, KEY_LEN, { N, r: R, p: P });
+  const derived = await scryptDerive(password, salt, KEY_LEN, { N, r: R, p: P, maxmem: MAXMEM });
 
   return `scrypt$${N}$${R}$${P}$${salt}$${derived.toString('hex')}`;
 }
@@ -44,7 +45,15 @@ export async function verifyPassword(passwordHash: string, password: string): Pr
   }
 
   const expected = Buffer.from(hashHex, 'hex');
-  const actual = await scryptDerive(password, salt, expected.length, { N: n, r, p });
-
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
+  try {
+    const actual = await scryptDerive(password, salt, expected.length, {
+      N: n,
+      r,
+      p,
+      maxmem: MAXMEM,
+    });
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  } catch {
+    return false;
+  }
 }

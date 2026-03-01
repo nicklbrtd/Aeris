@@ -31,6 +31,18 @@ model User {
   phoneVerifiedAt DateTime?
   passwordHash  String?
   avatarUrl     String?
+  bio           String?
+  profileVisibility String  @default("everyone")
+  lastSeenVisibility String @default("contacts")
+  readReceiptsEnabled Boolean @default(true)
+  typingStatusEnabled Boolean @default(true)
+  allowDmFrom   String      @default("members")
+  discoverByEmail Boolean   @default(false)
+  discoverByPhone Boolean   @default(false)
+  pushEnabled   Boolean     @default(false)
+  emailNotifications Boolean @default(false)
+  marketingOptIn Boolean    @default(false)
+  securityAlerts Boolean    @default(true)
   deviceKeyHash String?
   role          UserRole    @default(user)
   sessions      Session[]
@@ -39,6 +51,7 @@ model User {
   images        Image[]
   otpCodes      OtpCode[]
   invitesMade   Invite[]    @relation("InviteCreator")
+  pushSubscriptions PushSubscription[]
 }
 
 model Session {
@@ -133,5 +146,19 @@ model OtpCode {
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([phone, purpose, createdAt])
+  @@index([userId])
+}
+
+model PushSubscription {
+  id              String   @id @default(cuid())
+  userId          String
+  endpoint        String   @unique
+  p256dh          String
+  auth            String
+  expirationTime  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }

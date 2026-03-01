@@ -112,7 +112,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.code(400).send({ error: 'Слишком короткий ник' });
     }
 
-    const passwordHash = await hashPassword(parsed.data.password);
+    let passwordHash: string;
+    try {
+      passwordHash = await hashPassword(parsed.data.password);
+    } catch {
+      return reply.code(500).send({ error: 'Не удалось безопасно обработать пароль' });
+    }
     const avatarUrl = parsed.data.avatarUrl || null;
 
     if (parsed.data.email) {

@@ -10,7 +10,8 @@ import {
   resendRegisterPhoneOtp,
   verifyRegisterPhoneOtp,
 } from '@/lib/api';
-import { setGuestToken } from '@/lib/storage';
+import { setGuestToken, upsertSavedAccount } from '@/lib/storage';
+import type { User } from '@/lib/types';
 
 type AuthMode = 'register' | 'login' | 'invite';
 type ContactMode = 'email' | 'phone';
@@ -43,8 +44,19 @@ export default function JoinClient(): JSX.Element {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function completeAuth(guestToken?: string | null): void {
+  function completeAuth(user: User, guestToken?: string | null): void {
     setGuestToken(guestToken ?? null);
+    if (guestToken) {
+      const saved = upsertSavedAccount({
+        userId: user.id,
+        nickname: user.nickname,
+        avatarUrl: user.avatarUrl,
+        guestToken,
+      });
+      if (saved.overflowed) {
+        setError('На устройстве уже 2 аккаунта. Удалите один в Настройках, чтобы добавить новый.');
+      }
+    }
     router.replace('/chats');
   }
 
@@ -59,7 +71,7 @@ export default function JoinClient(): JSX.Element {
         nickname: inviteNickname,
         avatarUrl: inviteAvatarUrl,
       });
-      completeAuth(result.guestToken);
+      completeAuth(result.user, result.guestToken);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Ошибка входа по инвайту');
     } finally {
@@ -77,7 +89,7 @@ export default function JoinClient(): JSX.Element {
         identifier: loginIdentifier,
         password: loginPassword,
       });
-      completeAuth(result.guestToken);
+      completeAuth(result.user, result.guestToken);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Ошибка входа');
     } finally {
@@ -107,7 +119,7 @@ export default function JoinClient(): JSX.Element {
         return;
       }
 
-      completeAuth(result.guestToken);
+      completeAuth(result.user, result.guestToken);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Ошибка регистрации');
     } finally {
@@ -125,7 +137,7 @@ export default function JoinClient(): JSX.Element {
         phone: registerPhone,
         code: otpCode,
       });
-      completeAuth(result.guestToken);
+      completeAuth(result.user, result.guestToken);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Ошибка подтверждения OTP');
     } finally {

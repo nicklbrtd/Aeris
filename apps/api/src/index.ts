@@ -10,6 +10,7 @@ import Fastify from 'fastify';
 
 import { env } from './env.js';
 import { resolveAuthUser } from './lib/auth.js';
+import { getAllowedWebOrigins, isAllowedWebOrigin } from './lib/origins.js';
 import { prisma } from './lib/prisma.js';
 import { ensureUploadDirs } from './lib/uploadService.js';
 import { setupSocket } from './realtime/socket.js';
@@ -18,7 +19,9 @@ import { chatRoutes } from './routes/chats.js';
 import { inviteRoutes } from './routes/invites.js';
 import { messageRoutes } from './routes/messages.js';
 import { pushRoutes } from './routes/push.js';
+import { settingsRoutes } from './routes/settings.js';
 import { uploadRoutes } from './routes/uploads.js';
+import { userRoutes } from './routes/users.js';
 
 const fastify = Fastify({
   logger: {
@@ -55,21 +58,27 @@ declare module 'fastify' {
 
 async function main(): Promise<void> {
   await ensureUploadDirs();
+  const allowedWebOrigins = getAllowedWebOrigins(env);
 
   await fastify.register(cookie, {
     secret: env.SESSION_SECRET,
   });
 
   await fastify.register(cors, {
-    origin: env.WEB_ORIGIN,
+    origin(origin, callback) {
+      callback(null, isAllowedWebOrigin(origin, allowedWebOrigins));
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'x-csrf-token', 'x-guest-token'],
   });
 
   await fastify.register(helmet, {
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: {
+      policy: 'cross-origin',
+    },
   });
 
   await fastify.register(rateLimit, {
@@ -88,6 +97,8 @@ async function main(): Promise<void> {
     setHeaders: (res) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Cache-Control', 'public, max-age=60');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
     },
   });
 
@@ -98,6 +109,8 @@ async function main(): Promise<void> {
   await fastify.register(messageRoutes);
   await fastify.register(uploadRoutes);
   await fastify.register(inviteRoutes);
+  await fastify.register(settingsRoutes);
+  await fastify.register(userRoutes);
   await fastify.register(pushRoutes);
 
   fastify.io = setupSocket(fastify);

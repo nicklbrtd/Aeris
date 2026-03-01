@@ -83,7 +83,7 @@ export function PhotoViewer({ src, alt, open, onClose }: Props): JSX.Element {
             src={src}
             alt={alt}
             className="max-h-full max-w-full rounded-2xl object-contain will-change-transform"
-            style={{ x, y, scale }}
+            style={{ x, y, scale, touchAction: 'none' }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}

@@ -12,6 +12,25 @@ import { getChatMessages, getChats, getMe, sendMessageRest, uploadImage } from '
 import { getSocket } from '@/lib/socket';
 import type { Chat, Message, User } from '@/lib/types';
 
+function getOrigin(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000';
+  }
+  return window.location.origin;
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) {
+    return false;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function makeClientId(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 9)}`;
 }
@@ -29,6 +48,7 @@ export default function ChatPage(): JSX.Element {
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [showJump, setShowJump] = useState(false);
   const [sendingImage, setSendingImage] = useState(false);
+  const [status, setStatus] = useState('');
 
   const listRef = useRef<HTMLDivElement>(null);
   const typingStopTimerRef = useRef<number | null>(null);
@@ -280,6 +300,18 @@ export default function ChatPage(): JSX.Element {
     }
   };
 
+  const onCopyChatLink = async (): Promise<void> => {
+    const link = `${getOrigin()}/chats/${encodeURIComponent(chatId)}`;
+    const copied = await copyToClipboard(link);
+    setStatus(copied ? 'Ссылка на чат скопирована.' : 'Не удалось скопировать ссылку.');
+  };
+
+  const onCopyCommunityLink = async (): Promise<void> => {
+    const link = `${getOrigin()}/communities?community=${encodeURIComponent(chatId)}`;
+    const copied = await copyToClipboard(link);
+    setStatus(copied ? 'Ссылка на сообщество скопирована.' : 'Не удалось скопировать ссылку.');
+  };
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-3 pb-4 pt-2">
       <header className="backdrop-glass sticky top-2 z-20 mb-2 flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3 shadow-glass">
@@ -292,7 +324,27 @@ export default function ChatPage(): JSX.Element {
             <p className="text-xs text-muted">Приватный диалог</p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void onCopyChatLink()}
+            className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted"
+          >
+            Ссылка
+          </button>
+          {chat?.type === 'community' ? (
+            <button
+              type="button"
+              onClick={() => void onCopyCommunityLink()}
+              className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted"
+            >
+              Ссылка сообщества
+            </button>
+          ) : null}
+        </div>
       </header>
+
+      {status ? <p className="px-2 pb-2 text-xs text-emerald-300">{status}</p> : null}
 
       <div ref={listRef} className="relative flex-1 space-y-2 overflow-y-auto px-1 pb-2 pt-4">
         {messages.map((message) => (

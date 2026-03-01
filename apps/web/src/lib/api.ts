@@ -1,9 +1,9 @@
 import { API_URL } from './config';
 import { getCsrfToken, getGuestToken, setCsrfToken } from './storage';
-import type { Chat, Message, User } from './types';
+import type { Chat, Community, Message, SettingsPayload, User, UserSearchResult } from './types';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
 };
 
@@ -138,6 +138,31 @@ export async function createCommunity(title: string): Promise<{ chat: Chat }> {
   });
 }
 
+export async function createDmChat(memberUserId: string): Promise<{ chat: { id: string } }> {
+  return request('/chats', {
+    method: 'POST',
+    body: {
+      type: 'dm',
+      memberUserId,
+    },
+  });
+}
+
+export async function getCommunities(): Promise<{ communities: Community[]; csrfToken: string }> {
+  return request('/communities');
+}
+
+export async function joinCommunity(communityId: string): Promise<{ ok: true; chatId: string }> {
+  return request(`/communities/${communityId}/join`, {
+    method: 'POST',
+  });
+}
+
+export async function searchUsersByNickname(query: string): Promise<{ users: UserSearchResult[] }> {
+  const q = encodeURIComponent(query.trim());
+  return request(`/users/search?q=${q}`);
+}
+
 export async function uploadImage(file: File): Promise<{ image: Message['image'] }> {
   const guestToken = getGuestToken();
   const csrf = getCsrfToken();
@@ -176,4 +201,74 @@ export async function subscribePush(subscription: PushSubscription): Promise<voi
     method: 'POST',
     body: { subscription },
   });
+}
+
+export async function unsubscribePush(endpoint: string): Promise<void> {
+  await request('/push/unsubscribe', {
+    method: 'POST',
+    body: { endpoint },
+  });
+}
+
+export async function getPushPublicKey(): Promise<{ publicKey: string }> {
+  return request('/push/public-key');
+}
+
+export async function getSettings(): Promise<SettingsPayload> {
+  return request('/me/settings');
+}
+
+export async function updateProfile(payload: {
+  nickname?: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+}): Promise<void> {
+  await request('/me/profile', { method: 'PATCH', body: payload });
+}
+
+export async function updatePrivacy(payload: SettingsPayload['privacy']): Promise<void> {
+  await request('/me/privacy', { method: 'PATCH', body: payload });
+}
+
+export async function updateNotifications(payload: SettingsPayload['notifications']): Promise<void> {
+  await request('/me/notifications', { method: 'PATCH', body: payload });
+}
+
+export async function changePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  await request('/me/password', { method: 'PATCH', body: payload });
+}
+
+export async function logoutAllSessions(): Promise<void> {
+  await request('/me/logout-all', { method: 'POST' });
+}
+
+export async function exportMyData(): Promise<{
+  generatedAt: string;
+  profile: {
+    id: string;
+    nickname: string;
+    email: string | null;
+    phone: string | null;
+    createdAt: string;
+    avatarUrl: string | null;
+    bio: string | null;
+  };
+  stats: {
+    chatsCount: number;
+    messagesCount: number;
+    imagesCount: number;
+  };
+  note: string;
+}> {
+  return request('/me/data-export');
+}
+
+export async function deleteMyAccount(payload: {
+  confirm: 'DELETE';
+  password?: string;
+}): Promise<void> {
+  await request('/me', { method: 'DELETE', body: payload });
 }
